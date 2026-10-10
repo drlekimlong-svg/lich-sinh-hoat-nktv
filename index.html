@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Công cụ soạn lịch sinh hoạt hằng tuần của CLB Ngoại khoa Trưng Vương: điền thông tin, xem trước theo mascot nhóm trực, tải ảnh PNG để đăng.">
+<meta name="theme-color" content="#123D88">
+<link rel="icon" href="logo.webp" type="image/webp">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Soạn lịch sinh hoạt NKTV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&amp;display=swap">
+<style>
+/* Layout: two-pane composer, form on the left and a sticky poster preview on the right; on phones the preview opens as a full-screen sheet from a bottom bar.
+   Single light theme by choice: the official logo is dark ink and must sit on a light ground without a backdrop. */
+:root {
+  --bg: #F2F4F0;
+  --surface: #FFFFFF;
+  --surface-2: #E9EEE7;
+  --line: #D3DBD0;
+  --fg: #16201A;
+  --fg-2: #4C5A50;
+  --brand: #1F6E2A;
+  --group: #123D88;
+  --group-ink: #FFFFFF;
+  --group-soft: #E3ECFA;
+  --err: #B3261E;
+  --err-soft: #FBE9E7;
+  --warn: #8A5300;
+  --warn-soft: #FDF1DC;
+  --info: #24569E;
+  --info-soft: #E6EEF9;
+  --font: "Be Vietnam Pro", "Segoe UI", Tahoma, Arial, sans-serif;
+  --r: 14px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+h1, h2, h3, p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+img { max-width: 100%; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 110px; }
+.topbar { display: flex; align-items: center; gap: 14px; padding-block: 4px 18px; }
+.topbar img { width: 52px; height: 56px; object-fit: contain; flex: 0 0 52px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brand); }
+h1 { font-size: 26px; line-height: 1.2; font-weight: 800; text-wrap: balance; }
+.topbar .sub { font-size: 14px; color: var(--fg-2); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 452px; gap: 24px; align-items: start; }
+.editor { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; line-height: 1.3; font-weight: 700; }
+.step { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--group); color: var(--group-ink); font-size: 13px; font-weight: 800; flex: 0 0 26px; }
+.hint { font-size: 13px; color: var(--fg-2); margin-top: -6px; }
+
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; background: var(--group-soft); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 16px; font-size: 14px; }
+.banner p { flex: 1 1 260px; min-width: 0; }
+
+.groups { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.g { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px 8px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; transition: border-color .15s, background-color .15s; }
+.g input { position: absolute; opacity: 0; pointer-events: none; }
+.g img { width: 100%; max-width: 76px; aspect-ratio: 1 / 1; object-fit: contain; }
+.g span { font-size: 13px; font-weight: 700; }
+.g:hover { border-color: var(--fg-2); }
+.g.on { border-color: var(--g-c, var(--group)); background: var(--g-soft, var(--group-soft)); box-shadow: inset 0 0 0 1.5px var(--g-c, var(--group)); }
+.g:has(input:focus-visible) { outline: 3px solid var(--fg); outline-offset: 2px; }
+
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.fields .full { grid-column: 1 / -1; }
+.f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.f > span { font-size: 13px; font-weight: 600; color: var(--fg-2); }
+.f input { width: 100%; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.f input:focus-visible, .row input:focus-visible { outline: 2px solid var(--group); outline-offset: 1px; border-color: var(--group); }
+.daterow { display: flex; gap: 10px; align-items: center; }
+.daterow input { flex: 1 1 auto; }
+.wd { flex: 0 0 auto; font-size: 13px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+.times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "time title title" ". who btns"; gap: 8px 10px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.row .rtime { grid-area: time; display: flex; align-items: center; gap: 6px; }
+.row .rtitle { grid-area: title; min-width: 0; }
+.row .rwho { grid-area: who; min-width: 0; }
+.row .rbtns { grid-area: btns; display: flex; gap: 4px; }
+.row input { height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); width: 100%; min-width: 0; }
+.row input[type="time"] { width: 118px; padding: 0 6px; }
+.row .num { font-size: 12px; font-weight: 800; color: var(--fg-2); width: 18px; text-align: center; }
+.ib { display: inline-grid; place-items: center; width: 40px; height: 44px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); cursor: pointer; }
+.ib:hover { background: var(--surface-2); }
+.ib:disabled { opacity: .35; cursor: default; }
+.ib svg { width: 18px; height: 18px; }
+.ib:focus-visible, .btn:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+.rowtools { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; cursor: pointer; text-decoration: none; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--group); border-color: var(--group); color: var(--group-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.btn.danger { color: var(--err); }
+.btn svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.filebtn { position: relative; overflow: hidden; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:has(input:focus-visible) { outline: 3px solid var(--fg); outline-offset: 2px; }
+
+.preview { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 12px; min-width: 0; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; padding-bottom: 4px; }
+.pv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pv-head h2 { font-size: 18px; font-weight: 700; }
+.pv-size { font-size: 12px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.pv-close { display: none; }
+.canvasbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; }
+#cv { display: block; width: 100%; height: auto; aspect-ratio: 1080 / 1350; border-radius: 6px; background: var(--surface-2); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.actions .btn.primary { flex: 1 1 200px; }
+.secondary { display: flex; flex-wrap: wrap; gap: 8px; }
+.note { font-size: 12px; color: var(--fg-2); }
+
+.checks { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.checks h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.checks ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.chk { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.45; padding: 7px 9px; border-radius: 9px; }
+.chk .dot { flex: 0 0 8px; height: 8px; border-radius: 50%; margin-top: 6px; }
+.chk p { flex: 1 1 auto; min-width: 0; }
+.chk .btn { margin-left: auto; flex: 0 0 auto; }
+.chk.err { background: var(--err-soft); } .chk.err .dot { background: var(--err); }
+.chk.warn { background: var(--warn-soft); } .chk.warn .dot { background: var(--warn); }
+.chk.info { background: var(--info-soft); } .chk.info .dot { background: var(--info); }
+.chk.ok { background: var(--surface-2); } .chk.ok .dot { background: var(--brand); }
+.badge { font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--fg-2); }
+
+.fallback { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.fallback img { width: 100%; height: auto; border-radius: 6px; }
+
+.bottombar { display: none; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); background: var(--fg); color: var(--surface); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 40; max-width: calc(100% - 32px); }
+
+@media (max-width: 1040px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .preview { display: none; position: fixed; inset: 0; z-index: 30; max-height: none; background: var(--bg); overflow-y: auto; padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  .preview.open { display: flex; }
+  .preview > * { width: 100%; max-width: 560px; margin-inline: auto; }
+  .pv-close { display: inline-flex; }
+  body.sheet { overflow: hidden; }
+  .bottombar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; gap: 10px; align-items: center; padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 10px); background: var(--surface); border-top: 1px solid var(--line); }
+  .bottombar .btn { flex: 1 1 auto; }
+  .bottombar .count { font-size: 13px; color: var(--fg-2); white-space: nowrap; }
+}
+@media (max-width: 720px) {
+  .wrap { padding-inline: 16px; }
+  h1 { font-size: 22px; }
+  .groups { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "time time" "title title" "who btns"; }
+  .row input[type="time"] { width: 100%; }
+  .row .rtime { min-width: 0; }
+  .row .rtime label { flex: 1 1 0; min-width: 0; }
+  .card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <img src="logo.webp" alt="Logo CLB Ngoại khoa Trưng Vương">
+    <div>
+      <p class="eyebrow">CLB Ngoại khoa Trưng Vương</p>
+      <h1>Soạn lịch sinh hoạt</h1>
+      <p class="sub">Điền thông tin buổi sinh hoạt, ảnh lịch tự đổi theo mascot của nhóm trực.</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <form class="editor" id="f" novalidate>
+      <div class="banner" id="sampleBanner" hidden>
+        <p>Đang mở lịch mẫu của buổi 04/10/2026. Sửa trực tiếp, hoặc bắt đầu tuần mới với chương trình trống.</p>
+        <button type="button" class="btn small" id="startNew">Bắt đầu tuần mới</button>
+      </div>
+
+      <section class="card" aria-labelledby="h1-nhom">
+        <h2 id="h1-nhom"><span class="step">1</span>Nhóm trực</h2>
+        <p class="hint">Ảnh lịch mang màu, họa tiết và mascot của nhóm này.</p>
+        <div class="groups" id="groups" role="radiogroup" aria-labelledby="h1-nhom"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h2-time">
+        <h2 id="h2-time"><span class="step">2</span>Ngày, giờ và địa điểm</h2>
+        <div class="fields">
+          <label class="f full" for="ngay"><span>Ngày sinh hoạt</span>
+            <span class="daterow"><input type="date" id="ngay" name="ngay"><output class="wd" id="thu" for="ngay"></output></span>
+          </label>
+          <div class="times full">
+            <label class="f" for="gioBD"><span>Bắt đầu</span><input type="time" id="gioBD" name="gioBD"></label>
+            <label class="f" for="gioKT"><span>Kết thúc</span><input type="time" id="gioKT" name="gioKT"></label>
+          </div>
+          <label class="f" for="dd1"><span>Địa điểm, dòng 1</span><input id="dd1" name="dd1" autocomplete="off" placeholder="Phòng B3.04, khu A2"></label>
+          <label class="f" for="dd2"><span>Địa điểm, dòng 2</span><input id="dd2" name="dd2" autocomplete="off" placeholder="ĐHYK Phạm Ngọc Thạch"></label>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h3-ct">
+        <h2 id="h3-ct"><span class="step">3</span>Chương trình</h2>
+        <p class="hint">Mỗi dòng một mục. Người trình bày hoặc phụ trách hiện ở dòng dưới nội dung; ghi tên nhóm (Seiryu, Suzaku…) thì ảnh tự gắn mascot nhỏ của nhóm đó.</p>
+        <ol class="rows" id="rows"></ol>
+        <div class="rowtools">
+          <button type="button" class="btn" id="addRow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Thêm mục</button>
+          <button type="button" class="btn" id="sortRows">Xếp theo giờ</button>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h4-pt">
+        <h2 id="h4-pt"><span class="step">4</span>Phụ trách buổi</h2>
+        <div class="fields">
+          <label class="f" for="chuTri"><span>Chủ trì</span><input id="chuTri" name="chuTri" autocomplete="off" placeholder="BS. Nguyễn Văn A"></label>
+          <label class="f" for="dieuHanh"><span>Điều hành</span><input id="dieuHanh" name="dieuHanh" autocomplete="off" placeholder="SV. Trần Thị B"></label>
+        </div>
+      </section>
+      <p class="note">Bản nháp tự lưu trên trình duyệt của máy này. Muốn chuyển cho người khác soạn tiếp, dùng Lưu bản nháp rồi gửi file.</p>
+    </form>
+
+    <aside class="preview" id="preview" aria-labelledby="pvTitle">
+      <div class="pv-head">
+        <h2 id="pvTitle">Xem trước</h2>
+        <span class="pv-size">1080 × 1350 px</span>
+        <button type="button" class="btn small pv-close" id="closePv">Đóng</button>
+      </div>
+      <div class="canvasbox"><canvas id="cv" width="1080" height="1350" role="img" aria-label="Ảnh xem trước lịch sinh hoạt"></canvas></div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="dlPng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Tải ảnh PNG</button>
+        <button type="button" class="btn" id="sharePng" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 12v7h14v-7"></path></svg>Chia sẻ ảnh</button>
+      </div>
+      <section class="checks" aria-labelledby="chkTitle">
+        <h3 id="chkTitle">Cần xem lại <span class="badge" id="chkCount">0</span></h3>
+        <ul id="checks"></ul>
+      </section>
+      <div class="fallback" id="fallback" hidden>
+        <p class="note">Ảnh đã tạo. Nhấn giữ ảnh (điện thoại) hoặc bấm chuột phải (máy tính) rồi chọn lưu ảnh.</p>
+        <img id="outImg" alt="Ảnh lịch sinh hoạt đã tạo">
+      </div>
+      <div class="secondary">
+        <button type="button" class="btn small" id="saveJson" hidden>Lưu bản nháp</button>
+        <span class="btn small filebtn">Mở bản nháp<input type="file" id="openJson" accept=".json,application/json" aria-label="Mở file bản nháp"></span>
+        <button type="button" class="btn small danger" id="resetAll">Lịch mới</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="bottombar">
+  <span class="count" id="barCount"></span>
+  <button type="button" class="btn primary" id="openPv">Xem và tải ảnh</button>
+</div>
+
+<datalist id="whoList">
+  <option value="Thành viên CLB"></option>
+  <option value="Ban tổ chức"></option>
+  <option value="BCN"></option>
+  <option value="Seiryu"></option>
+  <option value="Suzaku"></option>
+  <option value="Byakko"></option>
+  <option value="Genbu"></option>
+  <option value="Kirin"></option>
+  <option value="Koi"></option>
+</datalist>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Constants ---------- */
+  var W = 1080, H = 1350;
+  var FONT = '"Be Vietnam Pro", "Segoe UI", Tahoma, Arial, sans-serif';
+  var GROUPS = ['seiryu', 'suzaku', 'byakko', 'genbu', 'kirin', 'koi'];
+  var THEMES = {
+    seiryu: { name: 'Seiryu', stage: '#E3ECFA', disc: '#F6E3B4', ink: '#0F3577', title: '#123D88', soft: '#3F5F93', primary: '#123D88', footer: '#0B2A62', accent: '#F2CF86', bar: '#E2B95A' },
+    suzaku: { name: 'Suzaku', stage: '#FCE8DC', disc: '#FFF4E8', ink: '#7A1916', title: '#951F1C', soft: '#8E4A3C', primary: '#951F1C', footer: '#6D1513', accent: '#FFCB8A', bar: '#F0AA54' },
+    byakko: { name: 'Byakko', stage: '#CCD9E6', disc: '#9FB6CC', ink: '#1F2833', title: '#2E3A48', soft: '#3D4C5C', primary: '#2E3A48', footer: '#1F2833', accent: '#B9D6F0', bar: '#8FB0CC' },
+    genbu: { name: 'Genbu', stage: '#E9EBD7', disc: '#D8D5A6', ink: '#262F1B', title: '#33402A', soft: '#4D5A3C', primary: '#33402A', footer: '#232C1B', accent: '#DDD493', bar: '#A9A36B' },
+    kirin: { name: 'Kirin', stage: '#EEE8F8', disc: '#D9CCF2', ink: '#33296B', title: '#4B3F8F', soft: '#5B528A', primary: '#4B3F8F', footer: '#382E70', accent: '#FFD2E1', bar: ['#F4A6B7', '#F8C99B', '#F3E29B', '#A9DCC0', '#9CC5EE', '#C3A6E8'] },
+    koi: { name: 'Koi', stage: '#ECE3D2', disc: '#D9BD86', ink: '#1C2030', title: '#1C2030', soft: '#4A4F5E', primary: '#1C2030', footer: '#11141E', accent: '#E3B868', bar: '#B8862E' }
+  };
+  var PATTERNS = {
+    seiryu: { w: 28, h: 28, op: 0.40, paths: [
+      { d: 'M0 0 A14 14 0 0 0 28 0', stroke: '#2F6FD0', lw: 1.4 },
+      { d: 'M-14 14 A14 14 0 0 0 14 14 M14 14 A14 14 0 0 0 42 14', stroke: '#2F6FD0', lw: 1.4 },
+      { d: 'M0 28 A14 14 0 0 0 28 28', stroke: '#2F6FD0', lw: 1.4 }] },
+    suzaku: { w: 48, h: 56, op: 0.42, paths: [
+      { d: 'M24 2 C 31 10, 31 20, 24 30 C 17 20, 17 10, 24 2 Z M24 9 L24 28', stroke: '#D9622E', lw: 1.4 },
+      { d: 'M0 29 C 7 37, 7 47, 0 57 C -7 47, -7 37, 0 29 Z M0 36 L0 55', stroke: '#D9622E', lw: 1.4 },
+      { d: 'M48 29 C 55 37, 55 47, 48 57 C 41 47, 41 37, 48 29 Z M48 36 L48 55', stroke: '#D9622E', lw: 1.4 }] },
+    byakko: { w: 72, h: 56, op: 0.20, paths: [
+      { d: 'M6 4 C 16 10, 18 20, 28 26 C 20 22, 12 16, 3 9 Z', fill: '#2E3A48' },
+      { d: 'M42 30 C 52 36, 54 46, 64 52 C 56 48, 48 42, 39 35 Z', fill: '#2E3A48' },
+      { d: 'M48 3 C 54 8, 59 11, 67 13 C 59 14, 53 11, 46 6 Z', fill: '#2E3A48' },
+      { d: 'M10 34 C 15 39, 20 42, 27 43 C 20 45, 14 42, 8 37 Z', fill: '#2E3A48' }] },
+    genbu: { w: 31.18, h: 54, op: 0.40, paths: [
+      { d: 'M0 9 L15.59 0 L31.18 9 L31.18 27 L15.59 36 L0 27 Z M15.59 36 L15.59 54', stroke: '#6B6A45', lw: 1.4 }] },
+    kirin: { w: 64, h: 48, op: 0.55, paths: [
+      { d: 'M6 16 C 6 9, 16 9, 16 15 C 16 19, 10 19, 10 15.5 M16 15 C 20 21, 30 21, 34 15 C 38 9, 48 9, 48 16 C 48 21, 41 21, 41 17', stroke: '#8C7FC9', lw: 1.5 },
+      { d: 'M-26 40 C -26 33, -16 33, -16 39 C -16 43, -22 43, -22 39.5 M-16 39 C -12 45, -2 45, 2 39 C 6 33, 16 33, 16 40 C 16 45, 9 45, 9 41', stroke: '#D9A85B', lw: 1.5 },
+      { d: 'M38 40 C 38 33, 48 33, 48 39 C 48 43, 42 43, 42 39.5 M48 39 C 52 45, 62 45, 66 39 C 70 33, 80 33, 80 40 C 80 45, 73 45, 73 41', stroke: '#D9A85B', lw: 1.5 }] },
+    koi: { w: 40, h: 40, op: 0.36, paths: [
+      { d: 'M1 20 A19 19 0 0 1 39 20 M7 20 A13 13 0 0 1 33 20 M13 20 A7 7 0 0 1 27 20', stroke: '#6E6650', lw: 1.3 },
+      { d: 'M-19 40 A19 19 0 0 1 19 40 M-13 40 A13 13 0 0 1 13 40 M-7 40 A7 7 0 0 1 7 40', stroke: '#6E6650', lw: 1.3 },
+      { d: 'M21 40 A19 19 0 0 1 59 40 M27 40 A13 13 0 0 1 53 40 M33 40 A7 7 0 0 1 47 40', stroke: '#6E6650', lw: 1.3 }] }
+  };
+  var WEEKDAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  var CREDIT = 'CLB Ngoại Khoa Trưng Vương - Trường ĐH Y Khoa Phạm Ngọc Thạch';
+  var STORE_KEY = 'nktv-lich-sinh-hoat-v1';
+  var SAMPLE = {
+    v: 1, sample: true, nhom: 'seiryu', ngay: '2026-10-04', gioBD: '14:00', gioKT: '18:00',
+    dd1: 'Phòng [số phòng], khu A2', dd2: 'ĐHYK Phạm Ngọc Thạch',
+    chuTri: 'BS. [Họ tên]', dieuHanh: 'SV. [Họ tên]',
+    rows: [
+      { t1: '14:00', t2: '15:00', title: 'Đại hội CLB Ngoại khoa Trưng Vương năm học 2026 - 2027', who: 'Thành viên CLB' },
+      { t1: '15:00', t2: '15:50', title: 'Rèn luyện đọc phim CT scan bụng', who: 'Thành viên CLB' },
+      { t1: '16:00', t2: '16:40', title: 'Hình ảnh chấn thương lách trên CT scan bụng', who: 'Suzaku' },
+      { t1: '17:10', t2: '18:00', title: 'Thông báo kế hoạch chương trình tuyển quân Gen12th', who: 'Ban tổ chức' }
+    ]
+  };
+
+  /* ---------- Small helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function toMin(t) { if (!/^\d{1,2}:\d{2}$/.test(t || '')) return null; var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); }
+  function fromMin(m) { var h = Math.floor(m / 60), mm = m % 60; return (h < 10 ? '0' : '') + h + ':' + (mm < 10 ? '0' : '') + mm; }
+  function parseDate(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); if (!m) return null; var d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d) ? null : d; }
+  function dmy(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function weekday(s) { var d = parseDate(s); return d ? WEEKDAYS[d.getDay()] : ''; }
+  function upper(s) { try { return s.toLocaleUpperCase('vi'); } catch (e) { return s.toUpperCase(); } }
+  function nextSunday() { var d = new Date(); d.setHours(0, 0, 0, 0); var add = (7 - d.getDay()) % 7; d.setDate(d.getDate() + add); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function groupOf(who) {
+    var s = (who || '').trim().toLowerCase().replace(/^nhóm\s+/, '');
+    return GROUPS.indexOf(s) >= 0 ? s : null;
+  }
+  var uidN = 0;
+  function rid() { uidN += 1; return 'r' + Date.now().toString(36) + uidN; }
+
+  /* ---------- State ---------- */
+  var state = null;
+  function normalize(o) {
+    var s = clone(SAMPLE);
+    s.sample = false;
+    if (!o || typeof o !== 'object') return null;
+    ['ngay', 'gioBD', 'gioKT', 'dd1', 'dd2', 'chuTri', 'dieuHanh'].forEach(function (k) { if (typeof o[k] === 'string') s[k] = o[k].slice(0, 200); });
+    s.nhom = GROUPS.indexOf(o.nhom) >= 0 ? o.nhom : 'seiryu';
+    s.sample = o.sample === true;
+    var src = Array.isArray(o.rows) ? o.rows.slice(0, 12) : [];
+    s.rows = src.map(function (r) {
+      r = r || {};
+      return { id: rid(), t1: typeof r.t1 === 'string' ? r.t1 : '', t2: typeof r.t2 === 'string' ? r.t2 : '', title: typeof r.title === 'string' ? r.title.slice(0, 200) : '', who: typeof r.who === 'string' ? r.who.slice(0, 60) : '' };
+    });
+    if (!s.rows.length) s.rows = [{ id: rid(), t1: s.gioBD || '', t2: '', title: '', who: '' }];
+    return s;
+  }
+  function serial() {
+    return { v: 1, nhom: state.nhom, ngay: state.ngay, gioBD: state.gioBD, gioKT: state.gioKT, dd1: state.dd1, dd2: state.dd2, chuTri: state.chuTri, dieuHanh: state.dieuHanh,
+      rows: state.rows.map(function (r) { return { t1: r.t1, t2: r.t2, title: r.title, who: r.who }; }) };
+  }
+  var saveTimer = 0;
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try { var o = serial(); o.sample = state.sample; localStorage.setItem(STORE_KEY, JSON.stringify(o)); } catch (e) { /* storage unavailable */ }
+    }, 350);
+  }
+  function loadInitial() {
+    try { var raw = localStorage.getItem(STORE_KEY); if (raw) { var s = normalize(JSON.parse(raw)); if (s) return s; } } catch (e) { /* ignore */ }
+    var s2 = normalize(SAMPLE); s2.sample = true; return s2;
+  }
+
+  /* ---------- Images and fonts ---------- */
+  var imgs = {};
+  function loadImg(key, src) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { imgs[key] = im; res(); };
+      im.onerror = function () { res(); };
+      im.src = src;
+    });
+  }
+  function loadFonts() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    var sample = 'LỊCH SINH HOẠT Đđ ặữ Thứ 0123';
+    return Promise.all([500, 600, 700, 800, 900].map(function (w) {
+      return document.fonts.load(w + ' 40px "Be Vietnam Pro"', sample).catch(function () {});
+    }));
+  }
+
+  /* ---------- Canvas text helpers ---------- */
+  var HAS_LS = typeof CanvasRenderingContext2D !== 'undefined' && 'letterSpacing' in CanvasRenderingContext2D.prototype;
+  function fnt(w, s) { return w + ' ' + s + 'px ' + FONT; }
+  function setFont(ctx, f, ls) { ctx.font = f; if (HAS_LS) ctx.letterSpacing = (ls || 0) + 'px'; }
+  function manual(ls) { return !HAS_LS && Math.abs(ls || 0) >= 1.5; }
+  function tw(ctx, text, ls) {
+    if (!manual(ls)) return ctx.measureText(text).width;
+    var w = 0; for (var i = 0; i < text.length; i++) w += ctx.measureText(text[i]).width + ls; return w;
+  }
+  function put(ctx, text, x, y, ls) {
+    if (!manual(ls)) { ctx.fillText(text, x, y); return; }
+    for (var i = 0; i < text.length; i++) { ctx.fillText(text[i], x, y); x += ctx.measureText(text[i]).width + ls; }
+  }
+  function baseline(ctx, size, top, lh) {
+    var m = ctx.measureText('Hg');
+    var a = m.fontBoundingBoxAscent, d = m.fontBoundingBoxDescent;
+    if (!(a > 0) || !(d > 0)) { a = size * 1.0; d = size * 0.27; }
+    return top + (lh - (a + d)) / 2 + a;
+  }
+  function wrap(ctx, text, maxW) {
+    var words = String(text || '').trim().split(/\s+/).filter(Boolean), lines = [], cur = '';
+    words.forEach(function (w) {
+      var test = cur ? cur + ' ' + w : w;
+      if (!cur || ctx.measureText(test).width <= maxW) cur = test; else { lines.push(cur); cur = w; }
+    });
+    if (cur) lines.push(cur);
+    var out = [];
+    lines.forEach(function (l) {
+      if (ctx.measureText(l).width <= maxW) { out.push(l); return; }
+      var part = '';
+      Array.from(l).forEach(function (ch) { if (part && ctx.measureText(part + ch).width > maxW) { out.push(part); part = ch; } else part += ch; });
+      if (part) out.push(part);
+    });
+    return out;
+  }
+  function ellipsize(ctx, text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    var s = text; while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+    return s.trim() + '…';
+  }
+  function rrect(ctx, x, y, w, h, r) {
+    r = Math.min(r, h / 2, w / 2);
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function contain(ctx, im, x, y, w, h, ax, ay) {
+    var s = Math.min(w / im.naturalWidth, h / im.naturalHeight), dw = im.naturalWidth * s, dh = im.naturalHeight * s;
+    ctx.drawImage(im, x + (w - dw) * ax, y + (h - dh) * ay, dw, dh);
+  }
+  var PATH_CLOCK = typeof Path2D !== 'undefined' ? new Path2D('M12 7v5l3.5 2') : null;
+  var PATH_PIN = typeof Path2D !== 'undefined' ? new Path2D('M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z') : null;
+  var PATH_USER = typeof Path2D !== 'undefined' ? new Path2D('M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7') : null;
+  function icon(ctx, kind, x, y, size, color) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(size / 24, size / 24);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (kind === 'clock') { ctx.arc(12, 12, 9, 0, Math.PI * 2); ctx.stroke(); if (PATH_CLOCK) ctx.stroke(PATH_CLOCK); }
+    else if (kind === 'user') { ctx.arc(12, 8, 4, 0, Math.PI * 2); ctx.stroke(); if (PATH_USER) ctx.stroke(PATH_USER); }
+    else { if (PATH_PIN) ctx.stroke(PATH_PIN); ctx.beginPath(); ctx.arc(12, 9.8, 2.6, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  var patCache = {};
+  function patternLayer(key) {
+    if (patCache[key]) return patCache[key];
+    var P = PATTERNS[key], c = document.createElement('canvas'); c.width = W; c.height = 640;
+    var g = c.getContext('2d');
+    if (typeof Path2D !== 'undefined') {
+      var paths = P.paths.map(function (p) { return { p: new Path2D(p.d), stroke: p.stroke, fill: p.fill, lw: p.lw }; });
+      for (var y = 0; y < 640; y += P.h) {
+        for (var x = 0; x < W; x += P.w) {
+          g.save(); g.beginPath(); g.rect(x, y, P.w, P.h); g.clip(); g.translate(x, y);
+          paths.forEach(function (q) {
+            if (q.fill) { g.fillStyle = q.fill; g.fill(q.p); }
+            if (q.stroke) { g.strokeStyle = q.stroke; g.lineWidth = q.lw; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(q.p); }
+          });
+          g.restore();
+        }
+      }
+    }
+    g.globalCompositeOperation = 'destination-in';
+    var grad = g.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, 'rgba(0,0,0,0.12)'); grad.addColorStop(0.38, 'rgba(0,0,0,0.16)');
+    grad.addColorStop(0.62, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,1)');
+    g.fillStyle = grad; g.fillRect(0, 0, W, 640);
+    g.globalCompositeOperation = 'source-over';
+    patCache[key] = c;
+    return c;
+  }
+
+  /* ---------- Poster layout ---------- */
+  var PANEL_TOP = 644, FOOT_TOP = 1179, ROWS_TOP = 696, ROWS_BOTTOM = FOOT_TOP - 16;
+  /* the presenter / person in charge always sits on its own line under the item title */
+  function rowBlockH(R, s) {
+    var h = R.lines.length * 36 * s;
+    if (R.whoLines.length) h += (R.lines.length ? 8 * s : 0) + R.whoLines.length * 30 * s;
+    return h;
+  }
+  function layoutRows(ctx, rows, s) {
+    var out = [], total = 0;
+    rows.forEach(function (r, i) {
+      var pad = 18 * s, timeH = 64 * s, gap = 28 * s, contentW = 952 - 150 * s - gap;
+      var who = (r.who || '').trim(), grp = groupOf(who), whoLines = [];
+      if (who) {
+        setFont(ctx, fnt(600, 22 * s), 0);
+        whoLines = wrap(ctx, who, contentW - 38 * s);
+        if (whoLines.length > 2) whoLines = [whoLines[0], ellipsize(ctx, whoLines.slice(1).join(' '), contentW - 38 * s)];
+      }
+      setFont(ctx, fnt(600, 28 * s), 0);
+      var R = { r: r, lines: wrap(ctx, r.title, contentW), who: who, grp: grp, pad: pad, whoLines: whoLines };
+      R.h = Math.max(timeH, rowBlockH(R, s)) + 2 * pad;
+      out.push(R);
+      total += R.h + (i < rows.length - 1 ? 1 : 0);
+    });
+    return { rows: out, total: total };
+  }
+
+  function drawPoster(ctx, st) {
+    var t = THEMES[st.nhom] || THEMES.seiryu, key = THEMES[st.nhom] ? st.nhom : 'seiryu';
+    ctx.save();
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = t.primary; ctx.fillRect(0, 0, W, H);
+
+    /* hero */
+    ctx.fillStyle = t.stage; ctx.fillRect(0, 0, W, 636);
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 636); ctx.clip();
+    ctx.globalAlpha = PATTERNS[key].op; ctx.drawImage(patternLayer(key), 0, 0); ctx.globalAlpha = 1;
+    ctx.fillStyle = t.disc; ctx.beginPath(); ctx.arc(838, 346, 250, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    if (imgs.logo) contain(ctx, imgs.logo, 64, 52, 90, 96, 0.5, 0.5);
+    setFont(ctx, fnt(700, 16), 16 * 0.28); ctx.fillStyle = t.soft;
+    put(ctx, 'CÂU LẠC BỘ', 172, baseline(ctx, 16, 72, 20), 16 * 0.28);
+    setFont(ctx, fnt(800, 26), 0.26); ctx.fillStyle = t.ink;
+    put(ctx, 'NGOẠI KHOA TRƯNG VƯƠNG', 172, baseline(ctx, 26, 96, 32), 0.26);
+
+    setFont(ctx, fnt(900, 92), -1.38); ctx.fillStyle = t.title;
+    put(ctx, 'LỊCH', 64, baseline(ctx, 92, 182, 114), -1.38);
+    put(ctx, 'SINH HOẠT', 64, baseline(ctx, 92, 296, 114), -1.38);
+
+    /* date pill */
+    var wd = st.ngay ? upper(weekday(st.ngay)) : 'CHƯA CHỌN NGÀY', ds = dmy(st.ngay);
+    setFont(ctx, fnt(800, 30), 0.6);
+    var w1 = tw(ctx, wd, 0.6), w2 = ds ? tw(ctx, ds, 0.6) : 0;
+    var pw = 26 + w1 + (ds ? 14 + 9 + 14 + w2 : 0) + 26, ptop = 432, ph = 61;
+    ctx.fillStyle = t.primary; rrect(ctx, 64, ptop, pw, ph, ph / 2); ctx.fill();
+    var pby = baseline(ctx, 30, ptop + 12, 36);
+    ctx.fillStyle = '#FFFFFF'; put(ctx, wd, 90, pby, 0.6);
+    if (ds) {
+      ctx.fillStyle = t.accent; ctx.beginPath(); ctx.arc(90 + w1 + 14 + 4.5, ptop + 30, 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF'; put(ctx, ds, 90 + w1 + 14 + 9 + 14, pby, 0.6);
+    }
+
+    /* time + place */
+    var timeText = st.gioBD ? (st.gioKT ? st.gioBD + ' – ' + st.gioKT : st.gioBD) : '';
+    if (timeText) {
+      icon(ctx, 'clock', 64, 515, 30, t.title);
+      setFont(ctx, fnt(700, 28), 0); ctx.fillStyle = t.ink;
+      put(ctx, timeText, 108, baseline(ctx, 28, 513, 34), 0);
+    }
+    var place = [st.dd1, st.dd2].map(function (x) { return (x || '').trim(); }).filter(Boolean);
+    if (place.length) {
+      var size = 24, lines = [];
+      while (true) {
+        setFont(ctx, fnt(500, size), 0);
+        lines = [];
+        place.forEach(function (p) { lines = lines.concat(wrap(ctx, p, 516)); });
+        if (lines.length <= 2 || size <= 19) break;
+        size -= 1;
+      }
+      if (lines.length > 2) lines = [lines[0], ellipsize(ctx, lines.slice(1).join(' '), 516)];
+      icon(ctx, 'pin', 64, 556, 30, t.title);
+      ctx.fillStyle = t.ink;
+      var plh = size >= 23 ? 32 : 28;
+      lines.forEach(function (ln, k) { put(ctx, ln, 108, baseline(ctx, size, 555 + k * plh, plh), 0); });
+    }
+
+    /* accent bar */
+    if (Array.isArray(t.bar)) {
+      var bg = ctx.createLinearGradient(0, 0, W, 0);
+      t.bar.forEach(function (c, i) { bg.addColorStop(i / (t.bar.length - 1), c); });
+      ctx.fillStyle = bg;
+    } else ctx.fillStyle = t.bar;
+    ctx.fillRect(0, 636, W, 8);
+
+    /* programme */
+    setFont(ctx, fnt(700, 16), 16 * 0.26); ctx.fillStyle = t.accent;
+    put(ctx, 'CHƯƠNG TRÌNH', 64, baseline(ctx, 16, 670, 20), 16 * 0.26);
+    var rows = st.rows.filter(function (r) { return (r.title || '').trim() || r.t1; });
+    var avail = ROWS_BOTTOM - ROWS_TOP, L = null, scale = 1, overflow = false;
+    var scales = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7];
+    for (var si = 0; si < scales.length; si++) {
+      L = layoutRows(ctx, rows, scales[si]); scale = scales[si];
+      if (L.total <= avail) break;
+    }
+    if (L && L.total > avail) overflow = true;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, PANEL_TOP, W, FOOT_TOP - PANEL_TOP); ctx.clip();
+    var y = ROWS_TOP, s = scale;
+    (L ? L.rows : []).forEach(function (R, i) {
+      var r = R.r, ch = R.h - 2 * R.pad, top = y + R.pad;
+      var tb = top + (ch - 64 * s) / 2;
+      setFont(ctx, fnt(800, 34 * s), -0.34 * s); ctx.fillStyle = t.accent;
+      put(ctx, r.t1 || '--:--', 64, baseline(ctx, 34 * s, tb, 40 * s), 0);
+      if (r.t2) {
+        setFont(ctx, fnt(500, 19 * s), 0); ctx.fillStyle = 'rgba(255,255,255,0.72)';
+        put(ctx, 'đến ' + r.t2, 64, baseline(ctx, 19 * s, tb + 40 * s, 24 * s), 0);
+      }
+      var tx = 64 + 150 * s + 28 * s, lh = 36 * s, tt = top + (ch - rowBlockH(R, s)) / 2;
+      setFont(ctx, fnt(600, 28 * s), 0); ctx.fillStyle = '#FFFFFF';
+      R.lines.forEach(function (ln, k) { put(ctx, ln, tx, baseline(ctx, 28 * s, tt + k * lh, lh), 0); });
+      if (R.whoLines.length) {
+        var wy = tt + R.lines.length * lh + (R.lines.length ? 8 * s : 0);
+        if (R.grp && imgs[R.grp]) contain(ctx, imgs[R.grp], tx, wy, 30 * s, 30 * s, 0.5, 0.5);
+        else icon(ctx, 'user', tx + 4 * s, wy + 4 * s, 22 * s, t.accent);
+        setFont(ctx, fnt(600, 22 * s), 0); ctx.fillStyle = t.accent;
+        R.whoLines.forEach(function (ln, k) { put(ctx, ln, tx + 38 * s, baseline(ctx, 22 * s, wy + k * 30 * s, 30 * s), 0); });
+      }
+      if (i < L.rows.length - 1) { ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(64, y + R.h, 952, 1); }
+      y += R.h + 1;
+    });
+    ctx.restore();
+
+    /* footer */
+    ctx.fillStyle = t.footer; ctx.fillRect(0, FOOT_TOP, W, H - FOOT_TOP);
+    var labels = [['NHÓM TRỰC', 64], ['CHỦ TRÌ', 392], ['ĐIỀU HÀNH', 720]];
+    labels.forEach(function (lb) {
+      setFont(ctx, fnt(700, 16), 16 * 0.24); ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      put(ctx, lb[0], lb[1], baseline(ctx, 16, 1203, 20), 16 * 0.24);
+    });
+    setFont(ctx, fnt(900, 42), 0.84); ctx.fillStyle = t.accent;
+    put(ctx, upper(t.name), 64, baseline(ctx, 42, 1227, 48), 0.84);
+    [[st.chuTri, 392], [st.dieuHanh, 720]].forEach(function (p) {
+      var txt = (p[0] || '').trim(); if (!txt) return;
+      var size = 26;
+      for (; size > 18; size -= 1) { setFont(ctx, fnt(700, size), 0); if (ctx.measureText(txt).width <= 296) break; }
+      setFont(ctx, fnt(700, size), 0); ctx.fillStyle = '#FFFFFF';
+      put(ctx, ellipsize(ctx, txt, 296), p[1], baseline(ctx, size, 1231, 32), 0);
+    });
+    ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(64, 1291, 952, 1);
+    setFont(ctx, fnt(500, 17), 0); ctx.fillStyle = 'rgba(255,255,255,0.68)';
+    put(ctx, CREDIT, 64, baseline(ctx, 17, 1306, 22), 0);
+
+    /* mascot on top, standing on the bar */
+    if (imgs[key]) contain(ctx, imgs[key], 612, 96, 432, 552, 0.5, 1);
+    if (HAS_LS) ctx.letterSpacing = '0px';
+    ctx.restore();
+    return { scale: scale, overflow: overflow, count: rows.length };
+  }
+
+  /* ---------- Checks ---------- */
+  function checks(st, lay) {
+    var out = [];
+    function add(level, text, fix) { out.push({ level: level, text: text, fix: fix || null }); }
+    if (!st.ngay) add('err', 'Chưa chọn ngày sinh hoạt.');
+    else if (parseDate(st.ngay) && parseDate(st.ngay).getDay() !== 0) add('info', dmy(st.ngay) + ' là ' + weekday(st.ngay).toLowerCase() + ', không phải Chủ nhật.');
+    var place = ((st.dd1 || '') + ' ' + (st.dd2 || '')).trim();
+    if (!place) add('warn', 'Chưa có địa điểm.');
+    else if (/\[[^\]]*\]/.test(place)) add('warn', 'Địa điểm còn chỗ trong ngoặc [ ] chưa điền.');
+    else if (/^phòng\s*(,|$)/i.test((st.dd1 || '').trim())) add('warn', 'Chưa có số phòng.');
+    var a = toMin(st.gioBD), b = toMin(st.gioKT);
+    if (a === null) add('warn', 'Chưa có giờ bắt đầu buổi.');
+    if (a !== null && b !== null && b <= a) add('err', 'Giờ kết thúc buổi phải sau giờ bắt đầu.');
+    var rows = st.rows;
+    if (!rows.length) add('err', 'Chương trình chưa có mục nào.');
+    rows.forEach(function (r, i) {
+      var n = i + 1, x = toMin(r.t1), y = toMin(r.t2);
+      if (!(r.title || '').trim()) add('err', 'Mục ' + n + ' chưa có nội dung.');
+      if (x === null) add('err', 'Mục ' + n + ' chưa có giờ bắt đầu.');
+      if (x !== null && y !== null && y <= x) add('err', 'Mục ' + n + ': giờ kết thúc phải sau giờ bắt đầu.');
+    });
+    var sorted = true;
+    for (var i = 0; i + 1 < rows.length; i++) {
+      var c1 = toMin(rows[i].t1), e1 = toMin(rows[i].t2), c2 = toMin(rows[i + 1].t1);
+      if (c1 !== null && c2 !== null && c2 < c1) { sorted = false; continue; }
+      if (e1 !== null && c2 !== null) {
+        if (c2 < e1) add('warn', 'Mục ' + (i + 1) + ' và ' + (i + 2) + ' chồng giờ: mục ' + (i + 1) + ' kết thúc ' + rows[i].t2 + ', mục ' + (i + 2) + ' bắt đầu ' + rows[i + 1].t1 + '.');
+        else if (c2 - e1 >= 20) add('info', 'Trống ' + (c2 - e1) + ' phút (' + rows[i].t2 + '–' + rows[i + 1].t1 + ') giữa mục ' + (i + 1) + ' và ' + (i + 2) + '.', { label: 'Thêm giải lao', act: 'gap', at: i + 1, t1: rows[i].t2, t2: rows[i + 1].t1 });
+      }
+    }
+    if (!sorted) add('warn', 'Các mục chưa theo thứ tự giờ.', { label: 'Xếp theo giờ', act: 'sort' });
+    var starts = rows.map(function (r) { return toMin(r.t1); }).filter(function (v) { return v !== null; });
+    var ends = rows.map(function (r) { return toMin(r.t2); }).filter(function (v) { return v !== null; });
+    if (starts.length && ends.length && a !== null && b !== null) {
+      var s0 = Math.min.apply(null, starts), e0 = Math.max.apply(null, ends);
+      if (s0 !== a || e0 !== b) add('info', 'Giờ buổi ' + st.gioBD + '–' + st.gioKT + ' khác khung chương trình ' + fromMin(s0) + '–' + fromMin(e0) + '.', { label: 'Lấy theo chương trình', act: 'span', t1: fromMin(s0), t2: fromMin(e0) });
+    }
+    if (lay && lay.overflow) add('err', 'Chương trình quá dài, phần cuối bị cắt. Bớt mục hoặc rút gọn nội dung.');
+    else if (lay && lay.scale < 1) add('info', 'Chương trình dài, chữ đã thu nhỏ còn ' + Math.round(lay.scale * 100) + '%.');
+    if (!(st.chuTri || '').trim()) add('warn', 'Chưa có tên người chủ trì.');
+    else if (/\[[^\]]*\]/.test(st.chuTri)) add('warn', 'Tên người chủ trì còn chỗ [ ] chưa điền.');
+    if (!(st.dieuHanh || '').trim()) add('warn', 'Chưa có tên người điều hành.');
+    else if (/\[[^\]]*\]/.test(st.dieuHanh)) add('warn', 'Tên người điều hành còn chỗ [ ] chưa điền.');
+    return out;
+  }
+  window.__lichChecks = checks; /* exposed for testing the pure check logic */
+
+  /* ---------- Rendering the form ---------- */
+  var cv = $('cv'), ctx = cv.getContext('2d');
+  var lastLay = null, raf = 0;
+  function schedule() { if (raf) return; raf = requestAnimationFrame(function () { raf = 0; redraw(); }); }
+  function redraw() {
+    lastLay = drawPoster(ctx, state);
+    renderChecks();
+    if (typeof refreshPng === 'function') refreshPng();
+  }
+
+  function svgIcon(d) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"></path></svg>';
+  }
+  function renderGroups() {
+    var box = $('groups'); box.textContent = '';
+    GROUPS.forEach(function (g) {
+      var t = THEMES[g];
+      var lab = document.createElement('label'); lab.className = 'g'; lab.htmlFor = 'g-' + g;
+      lab.style.setProperty('--g-c', t.primary); lab.style.setProperty('--g-soft', t.stage);
+      var inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'nhom'; inp.id = 'g-' + g; inp.value = g;
+      var im = document.createElement('img'); im.src = '' + g + '.webp'; im.alt = ''; im.width = 76; im.height = 76;
+      var sp = document.createElement('span'); sp.textContent = t.name;
+      lab.appendChild(inp); lab.appendChild(im); lab.appendChild(sp);
+      inp.addEventListener('change', function () { if (inp.checked) { state.nhom = g; touched(); syncGroup(); } });
+      box.appendChild(lab);
+    });
+  }
+  function syncGroup() {
+    GROUPS.forEach(function (g) {
+      var inp = $('g-' + g); inp.checked = state.nhom === g;
+      inp.parentNode.classList.toggle('on', state.nhom === g);
+    });
+    var t = THEMES[state.nhom];
+    var root = document.documentElement.style;
+    root.setProperty('--group', t.primary); root.setProperty('--group-soft', t.stage);
+  }
+
+  function renderRows() {
+    var ol = $('rows'); ol.textContent = '';
+    state.rows.forEach(function (r, i) {
+      var n = i + 1, li = document.createElement('li'); li.className = 'row';
+      li.innerHTML =
+        '<div class="rtime"><span class="num" aria-hidden="true">' + n + '</span>' +
+        '<label for="' + r.id + '-a"><span class="sr">Mục ' + n + ', giờ bắt đầu</span><input type="time" id="' + r.id + '-a"></label>' +
+        '<span aria-hidden="true">–</span>' +
+        '<label for="' + r.id + '-b"><span class="sr">Mục ' + n + ', giờ kết thúc</span><input type="time" id="' + r.id + '-b"></label></div>' +
+        '<label class="rtitle" for="' + r.id + '-c"><span class="sr">Mục ' + n + ', nội dung</span><input id="' + r.id + '-c" placeholder="Nội dung" autocomplete="off"></label>' +
+        '<label class="rwho" for="' + r.id + '-d"><span class="sr">Mục ' + n + ', phụ trách hoặc người trình bày</span><input id="' + r.id + '-d" list="whoList" placeholder="Phụ trách / người trình bày" autocomplete="off"></label>' +
+        '<div class="rbtns">' +
+        '<button type="button" class="ib" data-act="up" aria-label="Đưa mục ' + n + ' lên">' + svgIcon('M12 19V5M6 11l6-6 6 6') + '</button>' +
+        '<button type="button" class="ib" data-act="down" aria-label="Đưa mục ' + n + ' xuống">' + svgIcon('M12 5v14M6 13l6 6 6-6') + '</button>' +
+        '<button type="button" class="ib" data-act="del" aria-label="Xóa mục ' + n + '">' + svgIcon('M6 6l12 12M18 6L6 18') + '</button></div>';
+      var ia = li.querySelector('#' + r.id + '-a'), ib = li.querySelector('#' + r.id + '-b'), ic = li.querySelector('#' + r.id + '-c'), idd = li.querySelector('#' + r.id + '-d');
+      ia.value = r.t1; ib.value = r.t2; ic.value = r.title; idd.value = r.who;
+      ia.addEventListener('input', function () { r.t1 = ia.value; touched(); });
+      ib.addEventListener('input', function () { r.t2 = ib.value; touched(); });
+      ic.addEventListener('input', function () { r.title = ic.value; touched(); });
+      idd.addEventListener('input', function () { r.who = idd.value; touched(); });
+      li.querySelector('[data-act="up"]').disabled = i === 0;
+      li.querySelector('[data-act="down"]').disabled = i === state.rows.length - 1;
+      li.querySelectorAll('.ib').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var act = btn.getAttribute('data-act'), j = state.rows.indexOf(r);
+          if (act === 'up' && j > 0) { state.rows.splice(j, 1); state.rows.splice(j - 1, 0, r); }
+          if (act === 'down' && j < state.rows.length - 1) { state.rows.splice(j, 1); state.rows.splice(j + 1, 0, r); }
+          if (act === 'del') state.rows.splice(j, 1);
+          renderRows(); touched();
+          if (act === 'del') { $('addRow').focus(); return; }
+          var k = state.rows.indexOf(r) + 1;
+          var target = document.querySelector('#rows li:nth-child(' + k + ') [data-act="' + act + '"]');
+          if (target && target.disabled) target = document.querySelector('#rows li:nth-child(' + k + ') [data-act="' + (act === 'up' ? 'down' : 'up') + '"]');
+          if (target) target.focus();
+        });
+      });
+      ol.appendChild(li);
+    });
+  }
+
+  var FIELDS = ['ngay', 'gioBD', 'gioKT', 'dd1', 'dd2', 'chuTri', 'dieuHanh'];
+  function fillFields() {
+    FIELDS.forEach(function (k) { $(k).value = state[k] || ''; });
+    $('thu').textContent = weekday(state.ngay) || '—';
+    $('sampleBanner').hidden = !state.sample;
+    syncGroup(); renderRows();
+  }
+  FIELDS.forEach(function (k) {
+    $(k).addEventListener('input', function () { state[k] = $(k).value; if (k === 'ngay') $('thu').textContent = weekday(state.ngay) || '—'; touched(); });
+  });
+  function touched() {
+    if (state.sample) { state.sample = false; $('sampleBanner').hidden = true; }
+    $('fallback').hidden = true;
+    persist(); schedule();
+  }
+
+  function renderChecks() {
+    var list = checks(state, lastLay), ul = $('checks'); ul.textContent = '';
+    $('chkCount').textContent = String(list.length);
+    $('barCount').textContent = list.length ? list.length + ' điểm cần xem lại' : 'Sẵn sàng tải ảnh';
+    if (!list.length) {
+      var ok = document.createElement('li'); ok.className = 'chk ok';
+      ok.innerHTML = '<span class="dot" aria-hidden="true"></span><p>Không có gì cần xem lại.</p>';
+      ul.appendChild(ok); return;
+    }
+    list.forEach(function (c) {
+      var li = document.createElement('li'); li.className = 'chk ' + c.level;
+      var dot = document.createElement('span'); dot.className = 'dot'; dot.setAttribute('aria-hidden', 'true');
+      var p = document.createElement('p'); p.textContent = c.text;
+      li.appendChild(dot); li.appendChild(p);
+      if (c.fix) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = c.fix.label;
+        b.addEventListener('click', function () { applyFix(c.fix); });
+        li.appendChild(b);
+      }
+      ul.appendChild(li);
+    });
+  }
+  function applyFix(fx) {
+    if (fx.act === 'gap') state.rows.splice(fx.at, 0, { id: rid(), t1: fx.t1, t2: fx.t2, title: 'Giải lao', who: '' });
+    if (fx.act === 'sort') sortRows();
+    if (fx.act === 'span') { state.gioBD = fx.t1; state.gioKT = fx.t2; $('gioBD').value = fx.t1; $('gioKT').value = fx.t2; }
+    renderRows(); touched();
+  }
+  function sortRows() {
+    state.rows.sort(function (p, q) { var x = toMin(p.t1), y = toMin(q.t1); if (x === null) return 1; if (y === null) return -1; return x - y; });
+  }
+
+  /* ---------- Buttons ---------- */
+  $('addRow').addEventListener('click', function () {
+    var last = state.rows[state.rows.length - 1];
+    state.rows.push({ id: rid(), t1: last && last.t2 ? last.t2 : '', t2: '', title: '', who: '' });
+    renderRows(); touched();
+    var inputs = document.querySelectorAll('#rows li:last-child input');
+    if (inputs[2]) inputs[2].focus();
+  });
+  $('sortRows').addEventListener('click', function () { sortRows(); renderRows(); touched(); });
+
+  function freshWeek() {
+    state.sample = false;
+    state.ngay = nextSunday();
+    state.dd1 = 'Phòng [số phòng], khu A2';
+    state.chuTri = ''; state.dieuHanh = '';
+    state.rows = [{ id: rid(), t1: state.gioBD || '14:00', t2: '', title: '', who: '' }];
+    fillFields(); persist(); schedule();
+  }
+  $('startNew').addEventListener('click', freshWeek);
+  var armTimer = 0;
+  $('resetAll').addEventListener('click', function () {
+    var b = $('resetAll');
+    if (b.getAttribute('data-armed') !== '1') {
+      b.setAttribute('data-armed', '1'); b.textContent = 'Bấm lần nữa để xóa chương trình';
+      clearTimeout(armTimer);
+      armTimer = setTimeout(function () { b.removeAttribute('data-armed'); b.textContent = 'Lịch mới'; }, 4000);
+      return;
+    }
+    clearTimeout(armTimer); b.removeAttribute('data-armed'); b.textContent = 'Lịch mới';
+    freshWeek(); toast('Đã tạo lịch mới cho ' + dmy(state.ngay) + '.');
+  });
+
+  var toastTimer = 0;
+  function toast(msg) {
+    var el = document.querySelector('.toast');
+    if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = msg; el.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 3200);
+  }
+
+  function fileBase() {
+    var d = state.ngay || 'chua-co-ngay';
+    return 'Lich-sinh-hoat_' + d + '_' + THEMES[state.nhom].name;
+  }
+
+  /* ---------- Saving files ----------
+     Inside Claude the page runs in a sandbox: files go through the `downloads` capability.
+     On an ordinary website (GitHub Pages) a normal download link works, and phones can share the image. */
+  var IN_VIEWER = !!(window.claude && typeof window.claude.use === 'function');
+  var downloads = null;
+  function canDirect() { return !IN_VIEWER; }
+  function canShareFiles() {
+    if (IN_VIEWER || !navigator.share || !navigator.canShare || typeof File === 'undefined') return false;
+    try { return navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'x.png', { type: 'image/png' })] }); } catch (e) { return false; }
+  }
+  function updateSaveUi() {
+    $('saveJson').hidden = !(downloads || canDirect());
+    $('sharePng').hidden = !canShareFiles();
+  }
+  updateSaveUi();
+  (IN_VIEWER ? window.claude.use('downloads') : Promise.resolve(null))
+    .then(function (ns) { downloads = ns || null; updateSaveUi(); })
+    .catch(function () { downloads = null; updateSaveUi(); });
+
+  function directSave(data, name) {
+    var url = URL.createObjectURL(data), a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 6000);
+  }
+  function saveFile(name, blob, okMsg) {
+    if (downloads) {
+      return downloads.save({ filename: name, data: blob }).then(function (res) {
+        if (res && res.status === 'saved') toast(okMsg);
+        return true;
+      }).catch(function (e) {
+        var code = e && e.code;
+        if (code === 'declined') { toast('Đã hủy lưu.'); return true; }
+        if (code === 'rate_limited') { toast('Đang có một hộp thoại lưu khác, thử lại sau giây lát.'); return true; }
+        return false;
+      });
+    }
+    if (canDirect()) { directSave(blob, name); toast(okMsg); return Promise.resolve(true); }
+    return Promise.resolve(false);
+  }
+
+  /* the latest PNG, kept ready so the phone share sheet opens straight from the tap */
+  var pngBlob = null, pngTimer = 0;
+  function refreshPng() {
+    pngBlob = null; clearTimeout(pngTimer);
+    if ($('sharePng').hidden) return;
+    pngTimer = setTimeout(function () { cv.toBlob(function (b) { pngBlob = b; }, 'image/png'); }, 700);
+  }
+  function makePng(cb) { redraw(); cv.toBlob(function (b) { cb(b); }, 'image/png'); }
+
+  function showFallback(blob) {
+    var img = $('outImg');
+    if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
+    var url = URL.createObjectURL(blob); img.dataset.url = url; img.src = url;
+    $('fallback').hidden = false;
+  }
+  $('dlPng').addEventListener('click', function () {
+    makePng(function (blob) {
+      if (!blob) { toast('Không tạo được ảnh. Hãy tải lại trang rồi thử lần nữa.'); return; }
+      saveFile(fileBase() + '.png', blob, 'Đã lưu ảnh ' + fileBase() + '.png').then(function (done) {
+        if (!done) { showFallback(blob); toast('Ảnh đã tạo bên dưới, nhấn giữ hoặc chuột phải để lưu.'); }
+      });
+    });
+  });
+  $('sharePng').addEventListener('click', function () {
+    function share(blob) {
+      if (!blob) { toast('Không tạo được ảnh. Hãy thử lại.'); return; }
+      var file = new File([blob], fileBase() + '.png', { type: 'image/png' });
+      navigator.share({ files: [file], title: 'Lịch sinh hoạt ' + dmy(state.ngay) }).catch(function (e) {
+        if (!e || e.name !== 'AbortError') { showFallback(blob); toast('Máy này chưa chia sẻ được, nhấn giữ ảnh bên dưới để lưu.'); }
+      });
+    }
+    if (pngBlob) share(pngBlob); else makePng(share);
+  });
+  $('saveJson').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(serial(), null, 2)], { type: 'application/json' });
+    saveFile('ban-nhap-' + fileBase() + '.json', blob, 'Đã lưu bản nháp.').then(function (done) {
+      if (!done) toast('Không lưu được bản nháp ở chế độ xem này.');
+    });
+  });
+  $('openJson').addEventListener('change', function () {
+    var f = this.files && this.files[0]; var input = this;
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var s = normalize(JSON.parse(String(rd.result)));
+        if (!s) throw new Error('bad');
+        s.sample = false; state = s; fillFields(); persist(); schedule(); toast('Đã mở bản nháp ' + dmy(state.ngay) + '.');
+      } catch (e) { toast('File này không phải bản nháp lịch sinh hoạt.'); }
+      input.value = '';
+    };
+    rd.readAsText(f);
+  });
+
+  /* ---------- Mobile sheet ---------- */
+  $('openPv').addEventListener('click', function () { $('preview').classList.add('open'); document.body.classList.add('sheet'); redraw(); $('closePv').focus(); });
+  $('closePv').addEventListener('click', function () { $('preview').classList.remove('open'); document.body.classList.remove('sheet'); $('openPv').focus(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('preview').classList.contains('open')) $('closePv').click(); });
+
+  /* ---------- Boot ---------- */
+  state = loadInitial();
+  if (!state.rows.length) state.rows = [{ id: rid(), t1: '', t2: '', title: '', who: '' }];
+  state.rows.forEach(function (r) { if (!r.id) r.id = rid(); });
+  renderGroups(); fillFields(); redraw();
+  Promise.all([loadFonts()].concat([loadImg('logo', 'logo.webp')], GROUPS.map(function (g) { return loadImg(g, '' + g + '.webp'); }))).then(function () { patCache = {}; redraw(); });
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', schedule);
+})();
+</script>
+</body>
+</html>
