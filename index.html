@@ -1498,6 +1498,7 @@ h1 { font-size: 26px; line-height: 1.2; font-weight: 800; text-wrap: balance; }
   var canSend = !!SEND_URL && !IN_VIEWER;
   function refreshSendBox() {
     var b = $('sendBtn');
+    if (sending) return; /* while a send is in flight, keep "Đang gửi…" until the reply arrives (pngBlobNow redraws mid-send) */
     b.disabled = !canSend;
     if (!canSend) {
       sendStatus(IN_VIEWER ? 'Trong Claude chỉ tải được file Excel để xem thử; gửi về CLB chạy trên trang GitHub.' : 'Chức năng gửi chưa được bật. Bạn vẫn tải được file Excel.', 'note');
@@ -1537,7 +1538,7 @@ h1 { font-size: 26px; line-height: 1.2; font-weight: 800; text-wrap: balance; }
     }).then(function (res) {
       if (res && res.ok) {
         try { localStorage.setItem(SENT_KEY, JSON.stringify({ key: key, at: when.getTime() })); } catch (e) { /* ignore */ }
-        refreshSendBox(); sendStatus('Đã gửi về CLB lúc ' + hhmm(when) + '. Cảm ơn bạn!', 'ok'); toast('Đã gửi lịch về CLB.');
+        sending = false; refreshSendBox(); sendStatus('Đã gửi về CLB lúc ' + hhmm(when) + '. Cảm ơn bạn!', 'ok'); toast('Đã gửi lịch về CLB.');
       } else {
         var why = res && res.error;
         sendStatus(why === 'busy' ? 'Hệ thống đang nhận nhiều lịch, thử lại sau ít phút.' : why === 'email' ? 'Email chưa đúng, kiểm tra lại.' : 'Chưa gửi được. Thử lại, hoặc tải file Excel và ảnh rồi gửi BCN.', 'err');
